@@ -1,3 +1,4 @@
+# 2주차 Study 내용 정리
 # 1. NGINX란
 
 - 웹 서버 소프트웨어다
@@ -331,5 +332,91 @@ step 별로 어떤 액션을 하는지 알아보자
 2. create env file : secrets 탭에 정의한 ENV_VARS으로 .env 파일을 생성한다
 3. create remote directory : ec2 서버 /home/ubuntu/srv/ubuntu 디렉토리를 구축한다
 4. copy source via ssh key : rsync로 runners 내부의 파일(깃헙 코드 + .env)를 ec2 인스턴스로 동기화한다
-5. executing remote ssh commands using password : [deploy.sh](http://deploy.sh)를 실행한다
+5. executing remote ssh commands using password : deploy.sh를 실행한다
 (deploy.sh는 ec2서버에 docker, docker-compose를 설치하기 위한 스크립트다)
+
+# 3주차 Study 내용 정리
+
+# ER 다이어그램
+
+## 식별 vs 비식별 관계
+
+우선 다음과 같은 상품 : 주문 관계를 보면, 상품 : 주문 관계는 다대다 관계다.
+
+따라서 가운데 주문_상품 참조 테이블을 둬 1:N, N:1 관계로 만들어줬다.
+
+![식별vs비식별](./img/3th/relation1.png)
+### 식별?
+
+![식별](./img/3th/relation2.png)
+부모 테이블(상품, 주문)의 기본키(PK)를 자식 테이블(주문_상품)의 외래키(FK)이자 기본키(PK)로 갖는 구조!
+
+- FK를 PK로 갖기 때문에, 주문_상품 테이블에 행을 추가할 때 상품번호, 주문번호중 어느 하나라도 없으면 데이터를 생성할 수 없음
+- 실선이다
+
+ex: 게시글 : 작성된 댓글 → 식별관계이다. 게시글이 없으면 댓글이 없으니까!
+
+### 비식별?
+
+![비실별](./img/3th/relation3.png)
+부모 테이블(상품, 주문)의 기본키(PK)를 자식 테이블(주문_상품)의 외래키(FK)로만 가지고, PK는 다른 값을 갖는 구조! (PK는 주문_상품번호 라는 새로운 필드)
+
+- 식별관계와 다르게 주문번호, 상품번호중 어느 하나가 없더라도 자식테이블에 행을 추가할 수 있다!
+- 점선이다
+
+ex : 회사 부서 : 사원 → 비식별관계이다. 신입사원이 아직 부서에 배정되지 않았을 수도 있기 때문!
+
+### 정리!
+
+![식별vs비식별정리](./img/3th/relation4.png)
+### Ref
+
+[https://velog.io/@jch9537/DATABASE-식별과-비식별-관계](https://velog.io/@jch9537/DATABASE-%EC%8B%9D%EB%B3%84%EA%B3%BC-%EB%B9%84%EC%8B%9D%EB%B3%84-%EA%B4%80%EA%B3%84)
+
+[https://gngsn.tistory.com/48](https://gngsn.tistory.com/48)
+
+## ER 다이어그램 작성법 - 관계 표현 방법
+
+![er1](./img/3th/erd1.jpg) 
+
+사원 : 부서 = N : 1 = one or more : one and only one
+
+![er2](./img/3th/erd2.jpg) 
+
+실선 : Must be → 사원 입장에서 반드시 부서에 속해야됨 (좌 → 우로 읽음)
+
+점선 : May be → 부서 입장에서 사원을 배치 받을수도, 아닐수도 있음 (우→좌로 읽음)
+
+### 1:1
+
+![er3](./img/3th/erd3.jpg) 
+
+양방향이 모두 실선인 경우는 매우 드물다
+
+라면은 두개 이상의 스프를 포함하고 있지 않고, 스프도 한개 이상의 라면에 들어있지 않다.
+
+### M:1
+
+![er4](./img/3th/erd4.jpg)
+
+가장 보편적인 관계
+
+### M:M
+
+![er5](./img/3th/erd5.jpg)
+
+자주 발생하는 형태지만, 최종 결과는 M:M 으로 표현되지 않는다.
+
+M:1 관계로 분할해서 표현한다
+
+### O 표시
+
+![er6](./img/3th/erd6.png)
+
+까마귀 발에 O가 있으면 one or many가 아니라 zero or many의 의미다.
+
+0 이상이라는 뜻!
+
+### Ref
+
+[https://dlgkstjq623.tistory.com/319](https://dlgkstjq623.tistory.com/319)
