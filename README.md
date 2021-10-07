@@ -651,7 +651,14 @@ Database명은 seungstagram으로 정했다.
 ## 게시물에 댓글 작성하기
 지노형이 내 게시물을 보고 댓글을 달아줬다ㅎㅎ.
 이번에는 beenzino 인스턴스로부터 시작해 댓글을 작성했다! (beenzino.comment_set.create() 방식 사용)
-
+```python
+>>> beenzino.comment_set.create(post=post1, user=kim_user, text='hi', createdAt=timezone.now(), updatedAt=timezone.now())
+<Comment: comment_1>
+>>> beenzino.comment_set.all()
+<QuerySet [<Comment: comment_1>]>
+>>> beenzino.comment_set.filter(post=post1)
+<QuerySet [<Comment: comment_1>]>
+```
 ![db4](./img/3th/db4.png)
 
 ## Like
