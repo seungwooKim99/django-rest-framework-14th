@@ -336,7 +336,6 @@ step 별로 어떤 액션을 하는지 알아보자
 (deploy.sh는 ec2서버에 docker, docker-compose를 설치하기 위한 스크립트다)
 
 # 3주차 Study 내용 정리
-
 # ER 다이어그램
 
 ## 식별 vs 비식별 관계
@@ -366,7 +365,7 @@ ex: 게시글 : 작성된 댓글 → 식별관계이다. 게시글이 없으면 
 
 ex : 회사 부서 : 사원 → 비식별관계이다. 신입사원이 아직 부서에 배정되지 않았을 수도 있기 때문!
 
-### 정리!
+### 정리
 
 ![식별vs비식별정리](./img/3th/relation4.png)
 ### Ref
@@ -420,3 +419,258 @@ M:1 관계로 분할해서 표현한다
 ### Ref
 
 [https://dlgkstjq623.tistory.com/319](https://dlgkstjq623.tistory.com/319)
+
+# 인스타그램 DB 모델링
+## 인스타그램 서비스 설명
+인스타그램이 무슨 서비스인지는 대부분이 실제 사용을 해왔기 때문에 자세한 설명을 생략하겠다. 
+대신 우리가 무심코 썼던 인스타그램에는 어떤 기능들이 있는지 하나하나 정리해보자!
+
+### 이번에 고려한 기능들
+- [x] 유저 생성
+- [x] 로그인
+- [x] 로그아웃
+- [x] 게시글 좋아요
+- [x] 게시글 댓글 작성
+- [x] 팔로우
+- [x] 언팔로우
+- [x] 프로필 수정
+- [x] 게시글 작성 (사진/영상 업로드)
+- [x] 게시글 수정 (사진/영상 수정 혹은 삭제)
+- [x] 유저 정보 조회
+
+### 추후에 고려할 기능들
+- [ ] 해시태그 생성
+- [ ] 해시태그 검색
+- [ ] 유저 검색
+- [ ] 피드(게시글) 조회
+- [ ] DM 보내기
+- [ ] 스토리 생성
+- [ ] 댓글 좋아요
+
+## 인스타그램 ER 다이어그램
+위에서 정리해본 기능들을 바탕으로 필요한 테이블들을 작성했다! 사용한 툴은 [erdcloud](https://www.erdcloud.com/d/WmGcHJb9WT3hhGxf3) 이다.
+![seungstagram](./img/3th/seungstagram.png)
+테이블들을 하나하나 설명하기에 앞서 관계식을 살펴보자. <br/><br/>
+**User(장고 기본제공)과 Profile**은 1:1 비식별 관계이다. User 테이블로부터 OneToOneField로 확장한 형태다. 우선 인스타그램에 실제 가입해보면,
+사용자 세부정보를 추후에 입력할 수 있다. 따라서 비식별 관계로 지정을 해줬다.<br/><br/>
+**User-Follow**는 1:N 관계이다. Follow는 사실 User와 User간의 N:M 팔로우 기능을 구현하고 싶어 만든 테이블이다. 한 User에 대해 여러 Follow 관계
+를 포함할 수 있기 때문에 1:N 비식별 관계로 지정했다.<br/><br/>
+**User-Post-Comment-Like** 관계를 살펴보자. Post에 대해 여러 Like, Comment가 달릴 수 있다. 또한, User는 여러 Post를 생성할 수 있다.
+뿐만 아니라, Comment와 Like도 User가 여럿 생성할 수 있다.
+- User : Post = 1 : N
+- User : Comment = 1 : N
+- User : Like = 1 : N
+- Post : Comment = 1 : N
+- Post : Like = 1 : N
+
+정리하면 이렇게 얽히고 설킨 복잡한 관계로 표현 가능하다.<br/><br/>
+마지막으로 **Post-File**은 1:N 비식별 관계이다. Post에 텍스트형태의 게시글(caption) 이외에도 하나 이상의 사진, 영상을 올리기 때문에 다음과 같이
+관계를 설정했다.
+
+## 인스타그램 Django 모델
+### User
+장고에서 기본으로 제공하는 auth_user model이다. 로그인에 필요한 정보만 담기 위해 email, password 필드만 명시했다.
+
+### Profile
+User의 상세 정보가 담긴 테이블이다. 인스타그램 상에서 프로필에 대한 모든 정보가 담겨있다.
+```python
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    username = models.CharField(max_length=50)
+    firstName = models.CharField(max_length=50)
+    lastName = models.CharField(max_length=50)
+    picture = models.CharField(max_length=200)
+    createdAt = models.DateTimeField('createdAt')
+    updatedAt = models.DateTimeField('updatedAt')
+
+    def __str__(self):
+        return self.username
+```
+- user : OneToOneField를 통해 User 테이블을 확장하여 만들었다. 1-1 관계를 표현하는 필드.
+- username : 인스타그램 유저명(인스타 닉네임)
+- firstName : 이름
+- lastName : 성
+- picture : 프로필 사진에 대한 url 주소
+- createdAt : 생성 시각
+- updatedAt : 수정 시각
+
+### Post
+인스타그램 게시글에 대한 테이블이다.
+```python
+class Post(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    caption = models.CharField(max_length=300)
+    location = models.CharField(max_length=100)
+    createdAt = models.DateTimeField('createdAt')
+    updatedAt = models.DateTimeField('updatedAt')
+
+    def __str__(self):
+        return 'post_' + str(self.id)
+```
+- user : User-Post는 1:N 관계이다. user_id를 외래키로 가지며 참조한다
+- caption : 게시물의 글 내용
+- location : 위치정보를 텍스트 형태로 저장한다
+- createdAt : 생성 시각
+- updatedAt : 수정 시각
+
+### File
+게시물에 업로드할 사진과 영상에 대한 정보가 담긴 테이블이다.
+```python
+class File(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    url = models.CharField(max_length=300)
+    createdAt = models.DateTimeField('createdAt')
+    updatedAt = models.DateTimeField('updatedAt')
+
+    def __str__(self):
+        return 'file_' + str(self.id)
+```
+- post : Post-File은 1:N 관계이다. post_id를 외래키로 가지며 참조한다
+- url : 이미지 또는 영상에 대한 url 주소를 저장한다
+- createdAt : 생성 시각
+- updatedAt : 수정 시각
+
+### Comment
+게시물에 달리는 댓글에 대한 테이블이다.
+```python
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.CharField(max_length=300)
+    createdAt = models.DateTimeField('createdAt')
+    updatedAt = models.DateTimeField('updatedAt')
+
+    def __str__(self):
+        return 'comment_' + str(self.id)
+```
+- post : Post-Comment는 1:N 관계이다. 어떤 게시물에 달린 댓글인지 식별하기 위해 Post를 참조한다
+- user : User-Comment도 1:N 관계이다. 누가 생성한 댓글인지 식별하기 위해 User를 참조한다
+- text : 댓글 내용을 텍스트 형태로 저장한다
+- createdAt : 생성 시각
+- updatedAt : 수정 시각
+
+### Like
+게시글에 달리는 좋아요에 대한 테이블이다.
+```python
+class Like(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    createdAt = models.DateTimeField('createdAt')
+    updatedAt = models.DateTimeField('updatedAt')
+
+    def __str__(self):
+        return 'like_' + str(self.id)
+```
+- post : Post-Like는 1:N 관계이다. 어떤 게시물에 달린 좋아요인지 식별하기 위해 Post를 참조한다
+- user : User-Like도 1:N 관계이다. 누가 누른 좋아요인지 식별하기 위해 User를 참조한다
+- createdAt : 생성 시각
+- updatedAt : 수정 시각
+
+### Follow
+인스타그램 기능의 꽃인 팔로우/팔로잉 기능을 구현한 테이블이다. 구조를 짜는 과정에서 고민이 많았다. User-User가 N:M 관계를 따르는 구조이기 때문에 Follow라는
+중간 참조 형태의 테이블을 정의했다. (잘못된 부분이 있으면 피드백 부탁드려요!)
+```python
+class Follow(models.Model):
+    follower_user_id = models.ForeignKey(User, related_name='follower_user_id', on_delete=models.CASCADE)
+    followee_user_id = models.ForeignKey(User, related_name='followee_user_id', on_delete=models.CASCADE)
+    createdAt = models.DateTimeField('createdAt')
+    updatedAt = models.DateTimeField('updatedAt')
+
+    def __str__(self):
+        return 'follow_' + str(self.id)
+```
+- follower_user_id : 누가(어떤 User) 팔로우를 할 지에 대해 User를 외래키로 갖는다
+- followee_user_id : 누구를(어떤 User) 팔로우 할 지에 대해 User를 외래키로 갖는다
+- createdAt : 생성 시각
+- updatedAt : 수정 시각
+
+## DB에 데이터 담아보기
+위에 작성한 model들을 mysql db에 동기화 하기 위해 python migrate를 진행하자.
+Database명은 seungstagram으로 정했다.
+
+![db1](./img/3th/db1.png)
+
+### User and Profile 생성
+내 프로필을 생성해보았다.
+```python
+# import
+>>> from api.models import Profile, Post, File, Comment, Like, Follow
+>>> from django.contrib.auth.models import User
+
+# user 생성
+>>> kim_user = User(password="password")
+>>> kim_user.save()
+
+# profile 생성
+>>> kim_profile = Profile.objects.create(user=kim_user, username='keemsw__', firstName='Seungwoo', lastName='Kim', createdAt=timezone.now(), updatedAt=timezone.now())
+>>> kim_profile
+<Profile: keemsw__>
+>>> kim_user.profile
+<Profile: keemsw__>
+```
+
+두번째 가입자는 빈지노다.
+```python
+# user 생성
+>>> beenzino = User(password="password")
+>>> beenzino.username = 'realisshoman'
+>>> beenzino.save()
+
+# profile 생성
+>>> beenzino_profile = Profile.objects.create(user=beenzino, firstName='성빈', lastName='임', createdAt=timezone.now(), updatedAt=timezone.now())
+>>> beenzino.profile.firstName
+'성빈'
+>>> beenzino_profile.save()
+```
+
+### 팔로우 하기
+내가 지노형을 팔로우하기 시작했다.
+```python
+>>> follow = Follow(follower_user_id=kim_user, followee_user_id=beenzino, createdAt=timezone.now(), updatedAt=timezone.now())
+
+```
+그랬더니 지노형도 나를 팔로우 해줬다ㅎㅎ
+```python
+>>> follow2 = Follow(follower_user_id=beenzino, followee_user_id=kim_user, createdAt=timezone.now(), updatedAt=timezone.now())
+>>> follow2.save()
+```
+![db2](./img/3th/db2.png)
+
+### 게시물 올리기
+내가 계정을 생성하고 첫 게시물을 올렸다.
+
+```python
+>>> post1 = Post(user=kim_user, caption='Hello world!', location='Anyang', createdAt=timezone.now(), updatedAt=timezone.now())
+>>> post1.save()
+>>> kim_user.post_set.all()
+<QuerySet [<Post: post_1>]>
+```
+
+![db3](./img/3th/db3.png)
+
+## 게시물에 댓글 작성하기
+지노형이 내 게시물을 보고 댓글을 달아줬다ㅎㅎ.
+이번에는 beenzino 인스턴스로부터 시작해 댓글을 작성했다! (beenzino.comment_set.create() 방식 사용)
+
+![db4](./img/3th/db4.png)
+
+## Like
+댓글에 이어 좋아요까지 달아주셨다ㅠㅠ
+
+```python
+>>> beenzino.like_set.create(post=post1, user=kim_user, createdAt=timezone.now(), updatedAt=timezone.now())
+<Like: like_1>
+```
+
+![db5](./img/3th/db5.png)
+
+## 기타 후기
+이번 과제를 하면서 예상치 못한 에러를 마주해 살짝은 고통스러울 뻔 했다,,,ㅠ 하지만 구글링으로도 해결 못한 것들을 슬랙에 올렸더니 많은 분들이
+적극적으로 도와주셔서 금방 해결할 수 있었다. 나도 성장해서 남의 에러를 해결해주고싶다. 에러 내용은 Pycharm 터미널에서 python migrate가 제대로
+되지 않는 에러였는데, 일부 해결을 한 상태이며 자세한 내용은 슬랙에 올려두었다.
+
+### 마주한 이슈
+![etc1](./img/3th/etc1.png)
+
+처음에 Follow 테이블 필드에 두개의 User 외래키를 설정했는데 저런 에러가 나타났다. 구글링을 해보니 related_name이라는 column을 추가하여
+구분을 하라는 글을 봤다. related_name으로 구분을 해주니 문제가 해결됐다.
