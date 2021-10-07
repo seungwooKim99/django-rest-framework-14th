@@ -53,8 +53,8 @@ class Like(models.Model):
         return 'like_' + str(self.id)
 
 class Follow(models.Model):
-    follower_user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    followee_user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    follower_user_id = models.ForeignKey(User, related_name='follower_user_id', on_delete=models.CASCADE)
+    followee_user_id = models.ForeignKey(User, related_name='followee_user_id', on_delete=models.CASCADE)
     createdAt = models.DateTimeField('createdAt')
     updatedAt = models.DateTimeField('updatedAt')
 
