@@ -681,3 +681,24 @@ Database명은 seungstagram으로 정했다.
 
 처음에 Follow 테이블 필드에 두개의 User 외래키를 설정했는데 저런 에러가 나타났다. 구글링을 해보니 related_name이라는 column을 추가하여
 구분을 하라는 글을 봤다. related_name으로 구분을 해주니 문제가 해결됐다.
+
+## 피드백 반영 및 추가 사항
+### 모델 필드
+```python
+# 수정 이전 코드
+createdAt = models.DateTimeField('createdAt')
+updatedAt = models.DateTimeField('updatedAt')
+
+# 수정 이후 코드
+createdAt = models.DateTimeField(auto_now_add=True)
+updatedAt = models.DateTimeField(auto_now=True)
+```
+auto_now_add=True 옵션은 레코드 **생성**시 현재 시간을 자동 저장한다.
+auto_now=True 옵션은 레코드 **갱신**시 현재 시간을 자동 저장한다.
+
+```python
+# 모델 필드 중 일부
+caption = models.CharField(max_length=300)
+location = models.TextField()
+```
+Charfield는 길이 제한이 있지만, TextField는 제한이 없다.
