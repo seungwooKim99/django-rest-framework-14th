@@ -49,22 +49,22 @@ class LikeSerializer(serializers.ModelSerializer):
                   ]
 
 class PostSerializer(serializers.ModelSerializer):
-    files = FileSerializer(many=True, read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
-    likes = LikeSerializer(many=True, read_only=True)
+    files = FileSerializer(source='file_set', many=True, read_only=True)
+    comments = CommentSerializer(source='comment_set', many=True, read_only=True)
+    likes = LikeSerializer(source='like_set', many=True, read_only=True)
     class Meta:
         model = Post
-        fields = ['id',
-                  'caption',
-                  'location',
-                  'files',
-                  'comments',
-                  'likes',
-                  'createdAt',
-                  'updatedAt',
-                  'deletedAt',
-                  'isDeleted',
-                  ]
+        fields = [
+            'id',
+            'caption',
+            'comments',
+            'files',
+            'likes',
+            'createdAt',
+            'updatedAt',
+            'deletedAt',
+            'isDeleted',
+        ]
 
 class FollowSerializer(serializers.ModelSerializer):
     class Meta:
@@ -77,10 +77,10 @@ class FollowSerializer(serializers.ModelSerializer):
                   ]
 
 class UserSerializer(serializers.ModelSerializer):
-    profiles = ProfileSerializer(many=True, read_only=True)
-    posts = PostSerializer(many=True, read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
-    likes = LikeSerializer(many=True, read_only=True)
+    profile = ProfileSerializer(source='profile_set', many=True, read_only=True)
+    posts = PostSerializer(source='post_set', many=True, read_only=True)
+    comments = CommentSerializer(source='comment_set', many=True, read_only=True)
+    likes = LikeSerializer(source='like_set', many=True, read_only=True)
     follows = FollowSerializer(many=True, read_only=True)
 
     class Meta:
@@ -89,9 +89,12 @@ class UserSerializer(serializers.ModelSerializer):
                   'email',
                   'password',
                   'username',
-                  'profiles',
+                  'profile',
                   'posts',
                   'comments',
                   'likes',
                   'follows',
                   ]
+
+    def get_profile(self, obj):
+        return obj.profile.username
