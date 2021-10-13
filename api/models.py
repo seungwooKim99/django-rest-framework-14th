@@ -78,8 +78,8 @@ class Like(BaseModel):
         return 'like_' + str(self.id)
 
 class Follow(BaseModel):
-    follower_user_id = models.ForeignKey(User, related_name='follower_user', on_delete=models.CASCADE)
-    followee_user_id = models.ForeignKey(User, related_name='followee_user', on_delete=models.CASCADE)
+    follower_user = models.ForeignKey(User, related_name='follower_user', on_delete=models.CASCADE)
+    followee_user = models.ForeignKey(User, related_name='followee_user', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'follow'
