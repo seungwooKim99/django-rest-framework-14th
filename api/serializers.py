@@ -59,7 +59,7 @@ class PostSerializer(serializers.ModelSerializer):
                   'location',
                   'files',
                   'comments',
-                  'likes'
+                  'likes',
                   'createdAt',
                   'updatedAt',
                   'deletedAt',
@@ -92,5 +92,6 @@ class UserSerializer(serializers.ModelSerializer):
                   'profiles',
                   'posts',
                   'comments',
-                  'likes'
+                  'likes',
+                  'follows',
                   ]
