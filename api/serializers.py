@@ -77,7 +77,16 @@ class FollowSerializer(serializers.ModelSerializer):
                   ]
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer(source='profile_set', many=True, read_only=True)
+    # OneToOne Relationship Searialzer (Profile)
+    firstName = serializers.CharField(source='profile.firstName')
+    lastName = serializers.CharField(source='profile.lastName')
+    picture = serializers.CharField(source='profile.picture')
+    createdAt = serializers.CharField(source='profile.createdAt')
+    updatedAt = serializers.CharField(source='profile.updatedAt')
+    deletedAt = serializers.CharField(source='profile.deletedAt')
+    isDeleted = serializers.CharField(source='profile.isDeleted')
+
+    # Nested Serailzer
     posts = PostSerializer(source='post_set', many=True, read_only=True)
     comments = CommentSerializer(source='comment_set', many=True, read_only=True)
     likes = LikeSerializer(source='like_set', many=True, read_only=True)
@@ -89,7 +98,13 @@ class UserSerializer(serializers.ModelSerializer):
                   'email',
                   'password',
                   'username',
-                  'profile',
+                  'firstName',
+                  'lastName',
+                  'picture',
+                  'createdAt',
+                  'updatedAt',
+                  'deletedAt',
+                  'isDeleted',
                   'posts',
                   'comments',
                   'likes',
