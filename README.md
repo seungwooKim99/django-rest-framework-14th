@@ -1071,7 +1071,7 @@ class UserSerializer(serializers.ModelSerializer):
     def get_follower_number(self, obj):
         return obj.followee_user.count()
     # 팔로잉 수
-    # follow 테이블에서 자신이 follower로 담긴 data의 개수가 팔로워 수 이다
+    # follow 테이블에서 자신이 follower로 담긴 data의 개수가 팔로잉 수 이다
     # (내가 누군가를 팔로우 하는 것이므로)
     def get_followee_number(self, obj):
         return obj.follower_user.count()
