@@ -25,9 +25,9 @@ class BaseModel(models.Model):
 class Profile(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     username = models.CharField(max_length=50)
-    firstName = models.CharField(max_length=50)
-    lastName = models.CharField(max_length=50)
-    picture = models.CharField(max_length=200)
+    firstName = models.CharField(max_length=50, null=True, default=None)
+    lastName = models.CharField(max_length=50, null=True, default=None)
+    picture = models.CharField(max_length=200, null=True, default=None)
 
     class Meta:
         db_table = 'profile'
