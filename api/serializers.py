@@ -52,11 +52,17 @@ class PostSerializer(serializers.ModelSerializer):
     files = FileSerializer(source='file_set', many=True, read_only=True)
     comments = CommentSerializer(source='comment_set', many=True, read_only=True)
     likes = LikeSerializer(source='like_set', many=True, read_only=True)
+
+    # Serializer Method Field
+    like_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
     class Meta:
         model = Post
         fields = [
             'id',
             'caption',
+            'like_count',
+            'comment_count',
             'comments',
             'files',
             'likes',
@@ -65,6 +71,12 @@ class PostSerializer(serializers.ModelSerializer):
             'deletedAt',
             'isDeleted',
         ]
+
+    def get_like_count(self, obj):
+        return obj.like_set.count()
+
+    def get_comment_count(self, obj):
+        return obj.comment_set.count()
 
 class FollowSerializer(serializers.ModelSerializer):
     class Meta:
@@ -78,25 +90,30 @@ class FollowSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     # OneToOne Relationship Searialzer (Profile)
-    firstName = serializers.CharField(source='profile.firstName')
-    lastName = serializers.CharField(source='profile.lastName')
-    picture = serializers.CharField(source='profile.picture')
-    createdAt = serializers.CharField(source='profile.createdAt')
-    updatedAt = serializers.CharField(source='profile.updatedAt')
-    deletedAt = serializers.CharField(source='profile.deletedAt')
-    isDeleted = serializers.CharField(source='profile.isDeleted')
+    firstName = serializers.CharField(source='profile.firstName', read_only=True)
+    lastName = serializers.CharField(source='profile.lastName', read_only=True)
+    picture = serializers.CharField(source='profile.picture', read_only=True)
+    createdAt = serializers.CharField(source='profile.createdAt', read_only=True)
+    updatedAt = serializers.CharField(source='profile.updatedAt', read_only=True)
+    deletedAt = serializers.CharField(source='profile.deletedAt', read_only=True)
+    isDeleted = serializers.CharField(source='profile.isDeleted', read_only=True)
 
     # Nested Serailzer
     posts = PostSerializer(source='post_set', many=True, read_only=True)
     comments = CommentSerializer(source='comment_set', many=True, read_only=True)
     likes = LikeSerializer(source='like_set', many=True, read_only=True)
-    follows = FollowSerializer(many=True, read_only=True)
+
+    # Serializer Method Field
+    follower_number = serializers.SerializerMethodField()
+    followee_number = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id',
                   'email',
                   'password',
+                  'follower_number',
+                  'followee_number',
                   'username',
                   'firstName',
                   'lastName',
@@ -108,8 +125,10 @@ class UserSerializer(serializers.ModelSerializer):
                   'posts',
                   'comments',
                   'likes',
-                  'follows',
                   ]
 
-    def get_profile(self, obj):
-        return obj.profile.username
+    def get_follower_number(self, obj):
+        return obj.followee_user.count()
+
+    def get_followee_number(self, obj):
+        return obj.follower_user.count()
