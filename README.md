@@ -1589,3 +1589,98 @@ serializer 내부에 SerializerMethodField로 정의한 부분들이 있다. 좋
 아직 해결하지 못한 문제가 있어 후다닥 해결해야 할 것 같다ㅠ view를 작성할 수 있는 방식,
 선택지가 많기도 하고, 장고가 제공하는 기능들이 워낙 많아서 살짝은 혼란이 오기도 했다. 그런데
 익숙하고 편리한 기능들 위주로 체화시키면 금새 편해질 것 같았다.
+
+## 추가 내용
+4주차 때 궁금했던 내용
+```text
+지금은 views.py에 모든 모델에 대응되는 메소드를 정의했다. 하지만 **코드의 가독성을 높이기 위해** 이를 모델별로 파일을 분리하여 메소드 정의에 최적화를 
+할 수 있지 않을까? 또한, 지금은 `if requeste.method == 'GET'` 하단에 비즈니스 로직(어떤 작업을 할 지)가 정의되어 있는 형태이다.
+이 비즈니스 로직을 다른 디렉토리에서 여러개의 파일 형태로 관리하고, views.py의 `if requeste.method == 'GET'` 하단에 호출하는 형태로
+분리할 수 있진 않을까? API route와 비즈니스 로직을 분리하는 시도가 될 수 있을 것 같다. 이후 스터디를 통해 view를 깊게 공부할 기회가 있을 것
+같으니 그 때 배우고 해결되지 않으면 더 알아보도록 해야겠다.
+```
+위의 말은 3 Layer로 설계를 하겠다는 뜻이었다.
+
+1. API Route Controller : views.py에서 정의한 API view를 urls.py에 매핑
+2. Service Layer : GET/POST/PUT/DELETE에 해당하는 **비즈니스 로직**
+3. Data Access Layer : ORM을 통해 DB에 접근
+
+이대로 적용을 해보았다.
+### Ref
+[견고한 node.js 프로젝트 설계하기](https://velog.io/@hopsprings2/%EA%B2%AC%EA%B3%A0%ED%95%9C-node.js-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%95%84%ED%82%A4%ED%85%8D%EC%B3%90-%EC%84%A4%EA%B3%84%ED%95%98%EA%B8%B0)
+
+
+api/views.py 에서 api/services/PostService.py 에서 정의한 여러 비즈니스 로직을 불러온다.
+```python
+#api/views.py
+#...
+from .services.PostService import PostService
+
+class PostList(APIView):
+    def get(self, request, format=None):
+        return PostService().getAllPost()
+
+    def post(self, request, format=None):
+        data = JSONParser().parse(request)
+        return PostService().createPost(data)
+
+
+class PostDetail(APIView):
+    def get(self, request, id, format=None):
+        return PostService().getOnePostById(id)
+
+    def put(self, request, id, format=None):
+        data = JSONParser().parse(request)
+        return PostService().updatePost(data, id)
+
+    def delete(self, request, id, format=None):
+        return PostService().deletePost(id)
+```
+위의 views.py에서 볼 수 있듯이 각 api의 return 단에 PostService 클래스 에서 
+정의한 메소드들을 호출하고 있다. 아래는 PostService의 모습이다.
+```python
+# api/services/PostService.py
+from django.http import Http404
+from rest_framework import status
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+from api.serializers import PostSerializer
+from api.models import Post
+from django.contrib.auth.models import User
+
+
+class PostService():
+    def getAllPost(self):
+        posts = Post.objects.all()
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    def getOnePostById(self, id):
+        post = get_object_or_404(Post, pk=id)
+        serializer = PostSerializer(post, many=False)
+        return Response(serializer.data)
+
+    def createPost(self, data):
+        serializer = PostSerializer(data=data)
+        if serializer.is_valid():
+            temp_user = User.objects.get(id=data["user"])
+            serializer.save(user=temp_user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def updatePost(self, data, id):
+        post = get_object_or_404(Post, pk=id)
+        serializer = PostSerializer(post, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def deletePost(self, id):
+        post = get_object_or_404(Post, pk=id)
+        post.delete()
+        return Response({"message: delete success"}, )
+```
+Post에 관련된 비즈니스 로직들을 하나의 클래스 안에 메소드로 정의하였다. 지금은 Post에
+대해서만 작성했는데, 다른 모델들도 클래스로 만들어서 사용할 수 있다. 장고에서 더 나은 방식이
+있는지, 이게 더 효율적인 방식인지 아직은 정확히 모르겠다. 더 공부해봐야겠다.
