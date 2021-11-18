@@ -9,20 +9,31 @@ from .serializers import UserSerializer, ProfileSerializer, PostSerializer, Foll
 
 from .services.PostService import PostService
 
+# 6주차 DRF
+from rest_framework import viewsets
+'''
 class UserList(APIView):
     def get(self, request, format=None):
         users = User.objects.all()
         serializer = UserSerializer(users, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
     def post(self, request, format=None):
         data = JSONParser().parse(request)
         serializer = UserSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+'''
+class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
 
+class PostViewSet(viewsets.ModelViewSet):
+    serializer_class = PostSerializer
+    queryset = Post.objects.all()
+'''
 class PostList(APIView):
     def get(self, request, format=None):
         return PostService().getAllPost()
@@ -42,3 +53,4 @@ class PostDetail(APIView):
 
     def delete(self, request, id, format=None):
         return PostService().deletePost(id)
+    '''
