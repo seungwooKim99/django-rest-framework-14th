@@ -11,6 +11,10 @@ from .services.PostService import PostService
 
 # 6주차 DRF
 from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters
+#from rest_framework import filters
+
+
 '''
 class UserList(APIView):
     def get(self, request, format=None):
@@ -27,9 +31,25 @@ class UserList(APIView):
         return Response(serializer.errors, status=400)
 '''
 
+class UserFilter(FilterSet):
+    username = filters.CharFilter(field_name='username')
+    lastName = filters.CharFilter(method='filter_lastName')
+
+    def filter_lastName(self, queryset, name, value):
+        filtered_queryset = queryset.filter(profile__lastName__startswith=value)
+        return filtered_queryset
+
+    class Meta:
+        model = User
+        fields = ['username']
+
+
+
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
