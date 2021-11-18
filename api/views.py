@@ -26,6 +26,7 @@ class UserList(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 '''
+
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
@@ -33,6 +34,15 @@ class UserViewSet(viewsets.ModelViewSet):
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     queryset = Post.objects.all()
+
+    def get_queryset(self):
+        queryset = Post.objects.all()
+        location = self.request.query_params.get('location')
+        if location is not None:
+            queryset = queryset.filter(location=location)
+        return queryset
+
+
 '''
 class PostList(APIView):
     def get(self, request, format=None):
